@@ -8,10 +8,9 @@ import (
 
 // RegisterRoutes регистрирует все роуты API
 func RegisterRoutes(r *gin.Engine) {
-	r.GET("/ping", pingHandler)
-}
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	})
 
-// pingHandler возвращает pong
-func pingHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	r.GET("/ws", handleWebSocket)
 }
