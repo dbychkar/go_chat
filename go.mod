@@ -1,4 +1,4 @@
-module github.com/dbyhkar/go_chat
+module github.com/dbychkar/go_chat
 
 go 1.24.3
 
