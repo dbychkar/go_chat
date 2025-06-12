@@ -1,46 +1,93 @@
 package api
 
 import (
-	"fmt"
+	//"encoding/json"
+	"encoding/json"
 	"log"
 	"net/http"
 
+	//"github.com/dbychkar/go_chat/models"
 	"github.com/dbychkar/go_chat/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
+var hub = NewHub()
+
+func init() {
+	go hub.Run()
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin:     func(r *http.Request) bool { return true }, // Отключаем CORS для простоты
+	CheckOrigin:     func(r *http.Request) bool { return true },
+}
+
+type Client struct {
+	Conn *websocket.Conn
+	Send chan []byte
 }
 
 func handleWebSocket(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		log.Printf("WebSocket upgrade error: %v", err)
+		log.Println("WebSocket upgrade error:", err)
 		return
 	}
-	defer conn.Close()
+
+	client := &Client{
+		Conn: conn,
+		Send: make(chan []byte, 256),
+	}
+
+	hub.Register <- client
+
+	// Отправка истории сообщений при подключении
+	for _, msg := range hub.Storage.GetAll() {
+		data, err := json.Marshal(msg)
+		if err == nil {
+			client.Send <- data
+		}
+	}
+
+	go writePump(client)
+	readPump(client)
+}
+
+func readPump(client *Client) {
+	defer func() {
+		hub.Unregister <- client
+		client.Conn.Close()
+	}()
 
 	for {
-		var msg models.Message
-		err := conn.ReadJSON(&msg)
+		_, data, err := client.Conn.ReadMessage()
 		if err != nil {
-			log.Printf("Read error: %v", err)
 			break
 		}
 
-		log.Printf("Received: %+v", msg)
+		var msg models.Message
+		if err := json.Unmarshal(data, &msg); err != nil {
+			continue
+		}
 
-		// Пока просто возвращаем обратно (echo)
-		response := fmt.Sprintf("Echo from server: %s", msg.Content)
-		if err := conn.WriteJSON(models.Message{
-			Sender:  "server",
-			Content: response,
-		}); err != nil {
-			log.Printf("Write error: %v", err)
+		// Сохраняем и рассылаем сообщение
+		hub.Storage.Add(msg)
+
+		encoded, err := json.Marshal(msg)
+		if err == nil {
+			hub.Broadcast <- encoded
+		}
+	}
+}
+
+func writePump(client *Client) {
+	defer client.Conn.Close()
+
+	for msg := range client.Send {
+		err := client.Conn.WriteMessage(websocket.TextMessage, msg)
+		if err != nil {
 			break
 		}
 	}

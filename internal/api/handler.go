@@ -13,4 +13,6 @@ func RegisterRoutes(r *gin.Engine) {
 	})
 
 	r.GET("/ws", handleWebSocket)
+
+	r.StaticFile("/chat", "./web/client.html")
 }
