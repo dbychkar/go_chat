@@ -1,12 +1,11 @@
 package api
 
 import (
-	//"encoding/json"
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
-	//"github.com/dbychkar/go_chat/models"
 	"github.com/dbychkar/go_chat/models"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -67,9 +66,16 @@ func readPump(client *Client) {
 			break
 		}
 
-		var msg models.Message
-		if err := json.Unmarshal(data, &msg); err != nil {
+		var incoming models.Message
+		if err := json.Unmarshal(data, &incoming); err != nil {
 			continue
+		}
+
+		// ⬇️ Создаём сообщение с добавленным временем
+		msg := models.Message{
+			Username:  incoming.Username,
+			Text:      incoming.Text,
+			Timestamp: time.Now().Format("15:04:05"),
 		}
 
 		// Сохраняем и рассылаем сообщение
