@@ -12,7 +12,7 @@ func RegisterRoutes(r *gin.Engine) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 
-	r.GET("/ws", handleWebSocket)
+	r.GET("/ws", HandleWebSocket)
 
 	r.StaticFile("/chat", "./web/client.html")
 }

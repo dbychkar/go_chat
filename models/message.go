@@ -1,6 +1,7 @@
 package models
 
 type Message struct {
-	Sender  string `json:"sender"`
-	Content string `json:"content"`
+	Username  string `json:"username"`
+	Text      string `json:"text"`
+	Timestamp string `json:"timestamp"`
 }
