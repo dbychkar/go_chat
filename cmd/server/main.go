@@ -1,20 +1,21 @@
 package main
 
 import (
-	"log"
-
 	"github.com/dbychkar/go_chat/internal/api"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	r := gin.Default()
+	router := gin.Default()
 
-	// Подключаем хендлеры
-	api.RegisterRoutes(r)
+	// 👇 Статические файлы (отдаём всё из ./web)
+	router.Static("/static", "./web")
 
-	log.Println("🚀 Starting server on :8080")
-	if err := r.Run(":8080"); err != nil {
-		log.Fatalf("❌ Failed to run server: %v", err)
-	}
+	// 👇 WebSocket-эндпоинт
+	router.GET("/", func(c *gin.Context) {
+		c.File("./web/index.html")
+	})
+	router.GET("/ws", api.HandleWebSocket)
+
+	router.Run(":8080")
 }

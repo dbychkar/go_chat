@@ -29,7 +29,7 @@ type Client struct {
 	Send chan []byte
 }
 
-func handleWebSocket(c *gin.Context) {
+func HandleWebSocket(c *gin.Context) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println("WebSocket upgrade error:", err)
